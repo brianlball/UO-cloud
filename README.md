@@ -54,10 +54,13 @@ The repository includes a GitHub Actions workflow that:
 
 ### Docker Hub Configuration
 
-To enable automatic pushing to Docker Hub, configure the following secrets in your GitHub repository:
+To enable automatic pushing to Docker Hub, configure the following repository secrets:
 
-- `DOCKER_USERNAME`: Your Docker Hub username
-- `DOCKER_PASSWORD`: Your Docker Hub password or access token
+1. Go to your repository **Settings** → **Secrets and variables** → **Actions**
+2. Click **"New repository secret"**
+3. Add the following secrets:
+   - `DOCKER_USERNAME`: Your Docker Hub username
+   - `DOCKER_PASSWORD`: Your Docker Hub password or access token
 
 ### Versioning
 
