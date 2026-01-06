@@ -28,19 +28,23 @@ RUN set -eux; \
     rm -rf /var/lib/apt/lists/*
 
 # Generate the env file (~/.env_uo.sh) in the image
-RUN /usr/local/urbanopt-cli-1.1.0/setup-env.sh
+RUN /usr/local/urbanopt-cli-${UO_VERSION}/setup-env.sh
 
 # Provide Ruby globally (helps non-shell invocations that need /usr/bin/env ruby)
-RUN ln -sf /usr/local/urbanopt-cli-1.1.0/ruby/bin/ruby /usr/local/bin/ruby
+RUN ln -sf /usr/local/urbanopt-cli-${UO_VERSION}/ruby/bin/ruby /usr/local/bin/ruby 
+# symlink ruby
+RUN ln -sf /usr/local/urbanopt-cli-${UO_VERSION}/ruby/bin/ruby  /usr/local/urbanopt-cli-${UO_VERSION}/gems/ruby/3.2.0/bin/ruby
+
 
 # Robust `uo` wrapper: always sources ~/.env_uo.sh then runs the real uo
 RUN set -eux; \
-  UO_REAL="/usr/local/urbanopt-cli-1.1.0/gems/ruby/3.2.0/bin/uo"; \
+  UO_ROOT="/usr/local/urbanopt-cli-${UO_VERSION}"; \
+  UO_REAL="${UO_ROOT}/gems/ruby/3.2.0/bin/uo"; \
   { \
     printf '%s\n' '#!/usr/bin/env bash'; \
     printf '%s\n' 'set -euo pipefail'; \
     printf '%s\n' ''; \
-    printf '%s\n' '/usr/local/urbanopt-cli-1.1.0/setup-env.sh >/dev/null 2>&1 || true'; \
+    printf '%s\n' "${UO_ROOT}/setup-env.sh >/dev/null 2>&1 || true"; \
     printf '%s\n' 'if [ -f "$HOME/.env_uo.sh" ]; then'; \
     printf '%s\n' '  . "$HOME/.env_uo.sh"'; \
     printf '%s\n' 'fi'; \
