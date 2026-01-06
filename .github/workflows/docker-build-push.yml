@@ -28,6 +28,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Read VERSION file
+        run: |
+          VERSION=$(cat VERSION)
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "Using version: $VERSION"
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -45,21 +51,21 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
-            type=semver,pattern={{version}}
+            type=raw,value=${{ env.VERSION }},enable={{is_default_branch}}
 
       - name: Build Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           load: true
-          tags: urbanopt:1.1.0
+          tags: urbanopt:${{ env.VERSION }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
       - name: Test Docker container
         run: |
           echo "Testing Docker container..."
-          docker run --rm urbanopt:1.1.0 uo --version
+          docker run --rm urbanopt:${{ env.VERSION }} uo --version
           echo "Container test passed!"
 
       - name: Build and push Docker image
