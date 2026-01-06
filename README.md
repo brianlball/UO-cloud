@@ -40,94 +40,157 @@ docker run -it --rm -v $(pwd):/work brianlball/urbanopt-cloud:latest
 docker build -t urbanopt-cloud:latest .
 ```
 
-## Running on the Cloud
+# Running on the Cloud
 
-### Option 1 - Running on an instance in the cloud (Docker container)
+### Option 1: Docker-Based URBANopt Execution
 
-For a single-server cloud deployment (e.g., an AWS EC2 instance), the simplest and most reproducible approach is to run URBANopt inside a Docker container. This avoids installing URBANopt directly on the VM and makes upgrades/rollbacks as simple as changing the container tag.
+For a single-server cloud deployment (for example, an AWS EC2 instance), the simplest and most reproducible approach is to run **URBANopt inside a Docker container**. This avoids installing URBANopt directly on the virtual machine and makes upgrades, rollbacks, and environment consistency as simple as changing the container tag.
 
-> **URBANopt CLI commands and workflows are unchanged.** You will still use `uo create`, `uo run`, `uo process`, etc.—you’ll just run them inside the container.
+In this workflow, URBANopt runs entirely inside a container, while project files and simulation outputs live on the host filesystem.
 
-#### 1. Provision a VM and install Docker
-Create a cloud VM (e.g., Ubuntu 22.04 on AWS EC2) and install Docker. Ensure your user can run Docker commands.
-
-#### 2. Pull the prebuilt URBANopt container
-Pull a pinned version tag for reproducibility:
-
-    docker pull brianlball/urbanopt-cloud:1.1.0
-
-#### 3. Put your URBANopt project on the VM
-Copy your project directory onto the VM (e.g., via SCP/rsync, or by downloading from S3).
-Assume your project is located at:
-
-- `/home/ubuntu/my-uo-project`
-
-#### 4. Run URBANopt with the project mounted into the container
-Start an interactive shell with your project mounted at `/work`:
-
-    docker run --rm -it \
-      -v /home/ubuntu/my-uo-project:/work \
-      brianlball/urbanopt-cloud:1.1.0 \
-      bash
-
-Inside the container, your files are available at `/work`:
-
-    cd /work
-    uo --version
-
-From here, run the same URBANopt CLI commands you would run on a normal Linux installation.
+**URBANopt CLI commands and workflows are unchanged.** You will still use familiar commands such as `uo create`, `uo run`, `uo process`, and related workflows — the only difference is that these commands are executed inside the container rather than directly on the host operating system.
 
 ---
 
-## Example workflow: create and run the example project (inside the container)
+## Step 1: Launch a Cloud Instance
 
-If you want to validate your environment end-to-end, you can create the URBANopt example project and run it:
+Launch a Linux-based virtual machine on your preferred cloud platform:
 
-    cd /work
-    uo create --project-folder example_project
-    uo create --scenario-file example_project/example_project.json
-    uo run --feature example_project/example_project.json --scenario example_project/baseline_scenario.csv
+- AWS EC2  
+- Azure Virtual Machines  
+- Google Compute Engine  
+- On-premise or HPC cloud nodes  
 
-The URBANopt run directory is created under the project directory.
-
----
-
-## Example workflow: run *your existing* URBANopt project (inside the container)
-
-If you already have a URBANopt project folder, mount it to `/work` and run commands against paths in `/work`.
-
-Example (adjust paths/filenames to your project):
-
-    cd /work
-    uo run --feature path/to/feature_file.json --scenario path/to/scenario_file.csv
-
-See the URBANopt “Getting Started” and workflow docs for the expected project structure and run outputs. :contentReference[oaicite:3]{index=3}
+**Recommended configuration**
+- Ubuntu 22.04 LTS  
+- Adequate CPUs for parallel simulations  
+- Sufficient disk space for OpenStudio/EnergyPlus outputs  
 
 ---
 
-## Non-interactive usage (recommended for automation)
+## Step 2: Connect via SSH
 
-You can run URBANopt commands without opening an interactive shell by passing the command directly:
+Once the instance is running, connect using SSH:
 
-    docker run --rm \
-      -v /home/ubuntu/my-uo-project:/work \
-      brianlball/urbanopt-cloud:1.1.0 \
-      uo --version
+```
+ssh user@your-instance-ip
+```
 
-Or to run a simulation directly:
-
-    docker run --rm \
-      -v /home/ubuntu/my-uo-project:/work \
-      brianlball/urbanopt-cloud:1.1.0 \
-      uo run --feature /work/path/to/feature_file.json --scenario /work/path/to/scenario_file.csv
+All remaining steps are performed inside this SSH session.
 
 ---
 
-#### Notes
-- Pin the container tag (e.g., `:1.1.0`) for reproducibility.
-- For parallel scaling across many projects/scenarios, consider orchestration options (e.g., AWS Batch/ECS/EKS) or OpenStudio-server.
+## Step 3: Install Docker
 
+Most cloud VMs do **not** include Docker by default.
 
+On Ubuntu 22.04:
+
+```
+sudo apt-get update
+sudo apt-get install -y docker.io
+sudo systemctl enable docker
+sudo systemctl start docker
+```
+
+Managed container services (AWS ECS, AWS Batch, Kubernetes) already include Docker and do not require this step.
+
+---
+
+## Step 4: Obtain Your URBANopt Project Files
+
+This guide assumes your URBANopt project is stored in a Git repository and cloned onto the instance:
+
+```
+git clone https://github.com/your-org/your-urbanopt-project.git
+cd your-urbanopt-project
+```
+
+Other transfer methods (for example, SCP, rsync, or cloud storage downloads) may also be used.
+
+---
+
+## Step 5: Pull the URBANopt Docker Image
+
+URBANopt is provided as a prebuilt Docker image on Docker Hub:
+
+```
+brianlball/urbanopt-cloud:1.1.0
+```
+
+Pull the image locally:
+
+```
+docker pull brianlball/urbanopt-cloud:1.1.0
+```
+
+---
+
+## Step 6: Run URBANopt Using Docker
+
+Run URBANopt by mounting the project directory into the container:
+
+```
+docker run --rm -it \
+  -v "$(pwd):/work" \
+  brianlball/urbanopt-cloud:1.1.0 \
+  uo run -f example_uo/example_project.json \
+         -s example_uo/baseline_scenario.csv
+```
+
+### Notes
+
+- `example_project.json` and `baseline_scenario.csv` are **example files provided by URBANopt**
+- User projects will typically use different filenames
+- URBANopt CLI usage and workflows are unchanged from a native installation
+
+---
+
+## Simulation Outputs
+
+Because the project directory is mounted into the container, **all outputs are written directly to the host filesystem**.
+
+For example:
+
+```
+/work/example_uo/run/
+```
+
+maps to:
+
+```
+your-urbanopt-project/example_uo/run/
+```
+
+No results are stored only inside the container.
+
+---
+
+## Parallel Execution
+
+The number of parallel URBANopt simulations is controlled in `runner.conf`:
+
+```
+num_parallel = 10
+```
+
+The container uses the CPUs available on the host VM. No special Docker configuration is required on Linux-based cloud instances.
+
+---
+
+## Running Locally on Windows (Docker Desktop)
+
+The same container can be used on Windows with Docker Desktop:
+
+```
+docker run --rm -it ^
+  -v "C://path//to//urbanopt-project://work" ^
+  brianlball/urbanopt-cloud:1.1.0 ^
+  uo run -f example_uo/example_project.json ^
+         -s example_uo/baseline_scenario.csv
+```
+
+Ensure Docker Desktop is configured with enough CPUs to match `num_parallel`.
 
 
 ## GitHub Actions Workflow
