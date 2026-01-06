@@ -1,1 +1,81 @@
 # UO-cloud
+
+Docker container for URBANopt CLI 1.1.0 on Ubuntu 22.04.
+
+## Overview
+
+This repository contains a Dockerfile that builds a Docker container with URBANopt CLI 1.1.0 installed on Ubuntu 22.04. The container is automatically built, tested, and pushed to Docker Hub via GitHub Actions.
+
+## Features
+
+- **URBANopt CLI 1.1.0**: Pre-installed and configured
+- **Ubuntu 22.04**: Base image with all required dependencies
+- **Automated CI/CD**: GitHub Actions workflow for building, testing, and publishing
+- **Versioning**: Automatic semantic versioning via Git tags
+
+## Usage
+
+### Pull from Docker Hub
+
+```bash
+docker pull brianlball/uo-cloud:latest
+```
+
+### Run the Container
+
+```bash
+# Run with default command (shows version)
+docker run --rm brianlball/uo-cloud:latest
+
+# Run interactively
+docker run -it --rm brianlball/uo-cloud:latest bash
+
+# Run with a mounted workspace
+docker run -it --rm -v $(pwd):/work brianlball/uo-cloud:latest
+```
+
+### Build Locally
+
+```bash
+docker build -t uo-cloud:latest .
+```
+
+## GitHub Actions Workflow
+
+The repository includes a GitHub Actions workflow that:
+
+1. **Builds** the Docker container
+2. **Tests** the container by running `uo --version`
+3. **Pushes** to Docker Hub with appropriate tags:
+   - `latest` - for commits to main/master branch
+   - `<branch>` - for branch commits
+   - `v1.0.0`, `v1.0`, `v1` - for semantic version tags
+   - `<branch>-<sha>` - for commit SHA references
+
+### Docker Hub Configuration
+
+To enable automatic pushing to Docker Hub, configure the following secrets in your GitHub repository:
+
+- `DOCKER_USERNAME`: Your Docker Hub username
+- `DOCKER_PASSWORD`: Your Docker Hub password or access token
+
+### Versioning
+
+To create a new versioned release:
+
+```bash
+git tag -a v1.0.0 -m "Release version 1.0.0"
+git push origin v1.0.0
+```
+
+## Architecture Support
+
+The Dockerfile supports both x86_64 and arm64 architectures. To build for a specific architecture:
+
+```bash
+docker build --build-arg UO_ARCH=arm64 -t uo-cloud:arm64 .
+```
+
+## License
+
+See the URBANopt CLI license for details.
