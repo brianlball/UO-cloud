@@ -70,9 +70,13 @@ git push origin v1.0.0
 
 ## Architecture Support
 
-The Dockerfile supports both x86_64 and arm64 architectures. To build for a specific architecture:
+The Dockerfile supports both x86_64 (default) and arm64 architectures. To build for a specific architecture, use the `UO_ARCH` build argument:
 
 ```bash
+# Build for x86_64 (default)
+docker build -t uo-cloud:x86_64 .
+
+# Build for arm64
 docker build --build-arg UO_ARCH=arm64 -t uo-cloud:arm64 .
 ```
 
