@@ -57,14 +57,14 @@ jobs:
         with:
           context: .
           load: true
-          tags: test-image:latest
+          tags: urbanopt:1.1.0
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
       - name: Test Docker container
         run: |
           echo "Testing Docker container..."
-          docker run --rm test-image:latest uo --version
+          docker run --rm urbanopt:1.1.0 uo --version
           echo "Container test passed!"
 
       - name: Build and push Docker image
